@@ -1,126 +1,97 @@
-<script>
-	import 'mathlive';
+<script lang="ts">
+	import Scene from '$lib/components/Scene.svelte';
+	import { ComputeEngine, type BoxedExpression } from '@cortex-js/compute-engine';
 	import { onMount } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { dndzone } from 'svelte-dnd-action';
+	import type { MathfieldElement } from 'mathlive';
+	import { defaultExpr, type Expr } from '$lib/expr';
+	import IconPlus from '~icons/mdi/water-plus';
+	import Field from '$lib/components/Field.svelte';
+	import { randomColor } from '$lib/color';
 
-	/** @type {HTMLCanvasElement} */
-	let canvas;
+	let exprs: Expr[] = [];
+	let ce: ComputeEngine;
+	let valid = true;
 
 	onMount(async () => {
-		if (!navigator.gpu) {
-			throw Error('WebGPU not supported.');
-		}
+		import('@cortex-js/compute-engine');
+		import('mathlive');
 
-		const adapter = await navigator.gpu.requestAdapter();
-		if (!adapter) {
-			throw Error("Couldn't request WebGPU adapter.");
-		}
-
-		const device = await adapter.requestDevice();
-
-		const shaders = `
-            struct Uniforms {
-                resolution: vec2f,
-                min: vec3f,
-                max: vec3f,
-                rotation: vec4f,
-            };
-
-            @group(0) @binding(0) var<uniform> uni: Uniforms;
-            
-            const scale = 
-   
-            const vertices = array(
-
-            );
-
-            @vertex
-            fn vertex_main(@builtin(vertex_index) vi: u32) -> @builtin(position) {
-                let pos = array(
-                    vec2f(0, 1),  // top left
-                    vec2f(1, 1),  // top right
-                    vec2f(0, 0),  // bottom left
-                    vec2f(1, 0),  // bottom right
-                );
-
-                return vec4f(pos[vi], 0, 1);
-            }
-
-            @fragment
-            fn fragment_main(pos: @builtin(position)) -> @location(0) vec4f {
-                return vec4f(0, 0, 1, f32(pos.xyz));
-            }
-            
-            fn func(x: f32, y: f32, z: f32) -> bool {
-                return y == sin(x);
-            }`;
-
-		const shaderModule = device.createShaderModule({
-			code: shaders,
-		});
-
-		// `ctx` will only be `null` if another type of context has already been requested.
-		const ctx = /** @type {GPUCanvasContext} */ (canvas.getContext('webgpu'));
-
-		ctx.configure({
-			device,
-			format: navigator.gpu.getPreferredCanvasFormat(),
-			alphaMode: 'premultiplied',
-		});
-
-		// offset is 2 32bit floats (4bytes each)
-		const uniformBufferSize = 4 * 4;
-
-		const uniformValues = new Float32Array(uniformBufferSize / 4);
-
-		uniformValues.set([0, 0, 0, 1], 0);
-
-		const uniformBuffer = device.createBuffer({
-			size: uniformBufferSize,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		});
-
-		const renderPipeline = device.createRenderPipeline({
-			vertex: {
-				module: shaderModule,
-				entryPoint: 'vertex_main',
-			},
-			fragment: {
-				module: shaderModule,
-				entryPoint: 'fragment_main',
-				targets: [
-					{
-						format: navigator.gpu.getPreferredCanvasFormat(),
-					},
-				],
-			},
-			primitive: {
-				topology: 'triangle-strip',
-			},
-			layout: 'auto',
-		});
-
-		const commandEncoder = device.createCommandEncoder();
-
-		const passEncoder = commandEncoder.beginRenderPass({
-			colorAttachments: [
-				{
-					clearValue: { r: 0, g: 0, b: 1, a: 0.1 },
-					loadOp: 'clear',
-					storeOp: 'store',
-					view: ctx.getCurrentTexture().createView(),
-				},
-			],
-		});
-
-		passEncoder.setPipeline(renderPipeline);
-		passEncoder.end();
-
-		device.queue.submit([commandEncoder.finish()]);
+		ce = new ComputeEngine();
 	});
+
+	function updateExpr(field: Expr) {
+		console.log('asdf');
+		let mf = document.getElementById(field.id) as MathfieldElement | null;
+		console.log(mf);
+
+		let expr: import('@cortex-js/compute-engine').BoxedExpression | undefined = ce.parse(
+			mf?.value || defaultExpr,
+		);
+
+		if (expr?.head === 'Equal') {
+			const solved = expr.solve('y')?.[0];
+
+			if (solved) {
+				expr = solved;
+			} else {
+				// Try switching y = x to x = y; Compute Engine currently only solves for x on the left-hand side
+				const exprJson = expr.json as any[];
+				[exprJson[1], exprJson[2]] = [exprJson[2], exprJson[1]];
+				expr = ce.box(exprJson).solve('y')?.[0];
+			}
+		}
+
+		try {
+			const compiledF = expr?.compile();
+			if (compiledF) {
+				field.f = (x, z) => {
+					const value = compiledF({ x, z });
+					return typeof value === 'number' ? value : NaN;
+				};
+				exprs = exprs;
+				valid = true;
+			}
+		} catch (e) {
+			valid = false;
+			console.error(e);
+		}
+	}
 </script>
 
-<div class="flex">
-	<math-field></math-field>
+<div class="flex h-screen w-screen">
+	<div class="flex h-screen w-60 flex-col gap-3 bg-neutral p-3 shadow-lg">
+		<div
+			class="flex flex-col gap-3"
+			class:hidden={!exprs.length}
+			use:dndzone={{ items: exprs, flipDurationMs: 300 }}
+			on:consider={(e) => {
+				// exprs = e.detail.items;
+			}}
+			on:finalize={(e) => {
+				exprs = e.detail.items;
+			}}
+		>
+			{#each exprs as expr (expr.id)}
+				<div animate:flip={{ duration: 300 }}>
+					<Field {expr} {valid} bind:color={expr.color} on:input={() => updateExpr(expr)} />
+				</div>
+			{/each}
+		</div>
+		<button
+			class="btn btn-primary border-none bg-gradient-to-tr from-primary to-secondary"
+			on:click={() => {
+				const expr = { id: crypto.randomUUID(), color: randomColor() };
+				exprs = [...exprs, expr];
+				updateExpr(expr);
+			}}
+		>
+			<IconPlus class="h-9 w-9" />
+		</button>
+	</div>
 
-	<canvas bind:this={canvas} class="w-full"></canvas>
+	<div class="flex-1 bg-gradient-to-b from-base-200 to-base-300">
+		<Scene {exprs} />
+	</div>
 </div>
