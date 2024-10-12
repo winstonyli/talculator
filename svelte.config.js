@@ -10,7 +10,7 @@ export default {
 	kit: {
 		adapter: adapter(),
 		paths: {
-			base: process.env.NODE_ENV === 'production' ? '/wordleverse' : '',
+			base: process.env.NODE_ENV === 'production' ? '/talculator' : '',
 		},
 	},
 };
