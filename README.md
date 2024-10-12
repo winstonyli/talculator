@@ -1,38 +1,19 @@
-# create-svelte
+# Talculator 📐
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+A simple 3-dimensional grapher with support for color-coded equations and symbolic computation.
 
-## Creating a project
+Created with SvelteKit and TypeScript, powered by [Compute Engine](https://cortexjs.io/compute-engine) and [MathLive](https://cortexjs.io/mathlive), and hosted on Github Pages.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Additional yapping
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+This project is named after one of my high school teachers. He was... definitely a personality. (if you know, you know 🤐)
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+Before I decided to keep the scope of this project small, there were more features I intended to implement. (You can probably see vestigial signs of a few throughout this repository.) I'm going to list a few here as a personal reminder if I ever come back to this project:
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+- User-facing indicators for invalid expressions
+- UI for controlling pan and zoom
+- UI for controlling viewport
+- UI for controlling graph precision
+- Displaying 3D coordinates of point at cursor
+- More detailed meshes (e.g. show points/lines of interception, alternate colors with diagonal stripes when two meshes overlap)
+- Graphical analysis (e.g. min, max)
