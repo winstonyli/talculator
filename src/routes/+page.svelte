@@ -7,10 +7,13 @@
 	import type { MathfieldElement } from 'mathlive';
 	import { defaultExpr, type Expr } from '$lib/expr';
 	import IconPlus from '~icons/mdi/water-plus';
+	import IconMenu from '~icons/mdi/menu';
+	import IconClose from '~icons/mdi/close';
 	import Field from '$lib/components/Field.svelte';
 	import { randomColor } from '$lib/color';
+	import { fade } from 'svelte/transition';
 
-	let exprs: Expr[] = [];
+	let exprs: Expr[] = [{ id: 'default', color: 'blue' }];
 	let ce: ComputeEngine;
 	let valid = true;
 
@@ -56,38 +59,63 @@
 	}
 </script>
 
-<div class="flex h-screen w-screen">
-	<div class="flex h-screen w-60 flex-col gap-3 bg-neutral p-3 shadow-lg">
-		<div
-			class="flex flex-col gap-3"
-			class:hidden={!exprs.length}
-			use:dndzone={{ items: exprs, flipDurationMs: 300 }}
-			on:consider={(e) => {
-				exprs = e.detail.items;
-			}}
-			on:finalize={(e) => {
-				exprs = e.detail.items;
-			}}
-		>
-			{#each exprs as expr (expr.id)}
-				<div animate:flip={{ duration: 300 }}>
-					<Field {expr} {valid} bind:color={expr.color} on:input={() => updateExpr(expr)} />
-				</div>
-			{/each}
-		</div>
-		<button
-			class="btn btn-primary border-none bg-gradient-to-tr from-primary to-secondary"
-			on:click={() => {
-				const expr = { id: crypto.randomUUID(), color: randomColor() };
-				exprs = [...exprs, expr];
-				updateExpr(expr);
-			}}
-		>
-			<IconPlus class="h-9 w-9" />
-		</button>
+<div class="drawer h-[100dvh] overflow-hidden lg:drawer-open">
+	<input id="equations-drawer" type="checkbox" class="drawer-toggle" />
+
+	<label
+		for="equations-drawer"
+		aria-label="open sidebar"
+		class="btn btn-circle fixed left-3 top-3 z-10 border-none bg-gradient-to-tr from-primary to-secondary shadow lg:hidden"
+	>
+		<IconMenu class="size-6 text-primary-content" />
+	</label>
+
+	<!-- Page content -->
+	<div class="drawer-content fixed h-screen w-screen bg-gradient-to-b from-base-200 to-base-300">
+		<Scene {exprs} />
 	</div>
 
-	<div class="flex-1 bg-gradient-to-b from-base-200 to-base-300">
-		<Scene {exprs} />
+	<!-- Drawer content -->
+	<div class="drawer-side h-full">
+		<label for="equations-drawer" aria-label="close sidebar" class="drawer-overlay" />
+
+		<div class="pointer-events-none flex h-full flex-col gap-3 p-3 *:pointer-events-auto">
+			<button
+				class="btn btn-circle w-24 border-none bg-gradient-to-tr from-primary to-secondary shadow lg:w-auto"
+				on:click={() => {
+					const expr = { id: crypto.randomUUID(), color: randomColor() };
+					updateExpr(expr);
+					exprs = [...exprs, expr];
+				}}
+			>
+				<IconPlus class="ml-auto mr-3 size-9 text-primary-content lg:m-auto" />
+			</button>
+
+			<ul
+				class="flex flex-1 flex-col gap-3 overflow-y-auto pr-3"
+				use:dndzone={{ items: exprs, flipDurationMs: 300 }}
+				on:consider={(e) => {
+					exprs = e.detail.items;
+				}}
+				on:finalize={(e) => {
+					exprs = e.detail.items;
+				}}
+			>
+				{#each exprs as expr (expr.id)}
+					<li class="flex" animate:flip={{ duration: 300 }}>
+						<Field {expr} {valid} bind:color={expr.color} on:input={() => updateExpr(expr)} />
+						<button
+							class="btn btn-circle btn-error btn-xs z-10 -ml-6"
+							on:click={() => {
+								exprs = exprs.filter((e) => e.id !== expr.id);
+							}}
+							transition:fade
+						>
+							<IconClose />
+						</button>
+					</li>
+				{/each}
+			</ul>
+		</div>
 	</div>
 </div>
