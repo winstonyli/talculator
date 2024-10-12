@@ -92,7 +92,7 @@
 			</button>
 
 			<ul
-				class="flex flex-1 flex-col gap-3 overflow-y-auto pr-3"
+				class="flex flex-1 flex-col gap-3 overflow-y-auto"
 				use:dndzone={{ items: exprs, flipDurationMs: 300 }}
 				on:consider={(e) => {
 					exprs = e.detail.items;
