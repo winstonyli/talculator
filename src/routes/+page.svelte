@@ -22,13 +22,9 @@
 	});
 
 	function updateExpr(field: Expr) {
-		console.log('asdf');
 		let mf = document.getElementById(field.id) as MathfieldElement | null;
-		console.log(mf);
 
-		let expr: import('@cortex-js/compute-engine').BoxedExpression | undefined = ce.parse(
-			mf?.value || defaultExpr,
-		);
+		let expr: BoxedExpression | undefined = ce.parse(mf?.value || defaultExpr);
 
 		if (expr?.head === 'Equal') {
 			const solved = expr.solve('y')?.[0];
@@ -67,7 +63,7 @@
 			class:hidden={!exprs.length}
 			use:dndzone={{ items: exprs, flipDurationMs: 300 }}
 			on:consider={(e) => {
-				// exprs = e.detail.items;
+				exprs = e.detail.items;
 			}}
 			on:finalize={(e) => {
 				exprs = e.detail.items;

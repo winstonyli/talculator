@@ -1,5 +1,6 @@
 <script lang="ts">
-	import '../app.css';
+	import 'tailwindcss/tailwind.css';
+	import 'mathlive/fonts.css';
 </script>
 
 <slot />

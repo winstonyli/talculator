@@ -1,4 +1,5 @@
 <script lang="ts">
+	import _ from 'lodash';
 	import { colors } from '$lib/color';
 	import { defaultExpr, type Expr } from '$lib/expr';
 	import { createEventDispatcher } from 'svelte';
@@ -21,24 +22,10 @@
 	>
 		{defaultExpr}
 	</math-field>
-	<details class="dropdown dropdown-right">
-		<summary
-			class="btn btn-circle tooltip tooltip-bottom"
-			style="background-color: {color}"
-			data-tip={color}
-		></summary>
-		<ul class="dropdown-content z-[1] flex gap-3 rounded-box bg-neutral p-3 shadow-lg">
-			{#each Object.keys(colors) as k}
-				{#if k !== color}
-					<li class="tooltip tooltip-bottom" data-tip={k}>
-						<button
-							class="btn btn-circle"
-							style="background-color: {k}"
-							on:click={() => (color = k)}
-						/>
-					</li>
-				{/if}
-			{/each}
-		</ul>
-	</details>
+	<button
+		class="btn btn-circle tooltip tooltip-bottom hover:z-10"
+		style:background-color={color}
+		data-tip={color}
+		on:click={() => (color = _.sample(Object.keys(colors)) ?? 'blue')}
+	/>
 </div>
